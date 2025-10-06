@@ -1,1 +1,308 @@
-kukdjukyfxtcyuyuh
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mission Vista — Home + Solar System Explorer</title>
+
+
+
+
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+
+
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+
+
+
+<!-- Three.js + OrbitControls for 3D Planets -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+
+
+
+
+<!-- OpenSeadragon for Deep Zoom -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.1/openseadragon.min.css" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.1/openseadragon.min.js" crossorigin="anonymous"></script>
+
+
+
+
+<style>
+:root{--bg:#0b1020;--panel:#111936;--ink:#eaf2ff;--muted:#9fb0d3;--accent:#7cc7ff;--glass:rgba(20,20,40,.6)}
+html,body{height:100%;margin:0;background: radial-gradient(100% 80% at 50% 0%, #0a0a20 0%, #000 80%);color:var(--ink);font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial}
+a,a:visited{color:#89d4ff}
+
+
+
+
+/* Shared bits */
+header { backdrop-filter: blur(10px); background-color: rgba(10,10,30,0.4); position: sticky; top: 0; z-index: 50; }
+.starfield { position: fixed; inset: 0; z-index: -10; background: radial-gradient(circle at 50% 20%, #1a1a3d, #000); background-size: cover; animation: stars 200s linear infinite;}
+@keyframes stars { from { background-position:0 0;} to { background-position:10000px 10000px; } }
+.glow-text { background: linear-gradient(90deg, #70b8ff, #b597ff); -webkit-background-clip: text; color: transparent; animation: glow 3s ease-in-out infinite alternate; }
+@keyframes glow { from { text-shadow:0 0 10px #70b8ff44;} to { text-shadow:0 0 25px #b597ffaa;} }
+.hero-btn { background: linear-gradient(90deg, #3b82f6, #1e40af); color: white; padding: 1rem 3rem; border-radius: 9999px; font-size: 1.1rem; font-weight: 600; transition: all .3s; box-shadow: 0 0 20px #3b82f655, 0 0 40px #1e40af33; }
+.hero-btn:hover { transform: scale(1.06); box-shadow: 0 0 25px #3b82f6aa, 0 0 60px #1e40afaa; background: linear-gradient(90deg, #2563eb, #1d4ed8); }
+
+
+
+
+/* Explorer UI */
+.glass{background:var(--glass);backdrop-filter:blur(8px);border:1px solid rgba(120,120,200,.15)}
+.btn{padding:.45rem .65rem;border-radius:.75rem;font-size:.85rem;background: rgba(120,130,255,.14);border:1px solid rgba(120,130,255,.25);line-height:1}
+.btn:hover{background: rgba(120,130,255,.22)}
+.btn-primary{background: rgba(123,140,255,.25);border-color: rgba(123,140,255,.5)}
+.badge{font-size:10px;padding:2px 6px;border-radius:999px;background: rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+.nav-top-fix{ z-index: 9999 !important; pointer-events:auto !important; }
+
+
+
+
+/* 3D Planets */
+#planet-canvas{width:100%;height:100%;display:block}
+#planet-hud{position:absolute;left:12px;bottom:12px;color:var(--muted);font-size:12px}
+#side-panel{background:linear-gradient(180deg, #0e1630 0%, var(--panel) 40%);border-left:1px solid #223058;display:flex;flex-direction:column;min-width:300px}
+#chat-log{flex:1;overflow:auto;padding:12px 16px}
+.msg{margin:0 0 10px;line-height:1.35}
+.msg.user{color:#e3f1ff}
+.msg.bot{color:#cfe6ff}
+.msg .who{font-weight:600;color:var(--accent);margin-right:6px}
+
+
+
+
+/* Deep Zoom (minimal) */
+#viewer{position:absolute; inset:0; z-index:10;}
+#measureOverlay{position:absolute; inset:0; pointer-events:none}
+#discoverCanvas{position:absolute; inset:0; pointer-events:none; opacity:.45; display:none}
+</style>
+</head>
+<body>
+<div class="starfield"></div>
+
+
+
+
+<!-- TOP NAV (single-page: switches sections) -->
+<header class="p-6 flex justify-between items-center">
+<h1 class="text-2xl font-bold tracking-wider glow-text">MISSION VISTA</h1>
+<nav class="space-x-6">
+  <button data-goto="home" class="hover:text-blue-400">Home</button>
+  <button data-goto="explorer" class="hover:text-blue-400">Solar System</button>
+</nav>
+</header>
+
+
+
+
+<!-- =========================
+   SECTION: HOME
+========================== -->
+<main id="home" class="block">
+<!-- HERO -->
+<section class="min-h-screen flex flex-col items-center justify-center text-center px-6">
+  <h2 class="text-5xl md:text-6xl font-bold mb-6 glow-text">See Beyond Pixels</h2>
+  <p class="max-w-2xl text-lg text-gray-300 mb-10">
+    Your phone captures millions of pixels. NASA captures trillions.<br />
+    <span class="text-blue-400">Mission Vista</span> transforms real NASA datasets into immersive visual experiences,
+    helping you explore planets, galaxies, and time itself.
+  </p>
+  <button data-goto="explorer" class="hero-btn">🚀 Enter the Solar System →</button>
+</section>
+
+
+
+
+<!-- CONCEPT -->
+<section class="py-24 bg-white/5 text-center">
+  <h3 class="text-3xl font-semibold mb-10">The Vision</h3>
+  <div class="max-w-4xl mx-auto text-gray-300 text-lg leading-relaxed">
+    <p class="mb-6">
+      We’re building a platform that makes NASA’s enormous image datasets—spanning from
+      <span class="text-blue-400">Earth’s atmosphere</span> to the <span class="text-blue-400">Andromeda Galaxy</span>—truly explorable.
+      Mission Vista lets anyone, from students to scientists, navigate through high-resolution
+      visuals and uncover patterns in space and time.
+    </p>
+    <p class="mb-6">
+      Instead of overwhelming gigapixels of static data, our interface scales, labels, and
+      visualizes them seamlessly. Zoom into Mars, observe Earth’s dynamic layers, or fly through
+      stellar nurseries — all powered by NASA’s open datasets.
+    </p>
+    <p class="text-blue-400 font-semibold">Data meets discovery. Curiosity meets visualization.</p>
+  </div>
+</section>
+
+
+
+
+<!-- OUR PROJECT: image left, text right, heading inside right -->
+<section class="py-24 bg-black/30">
+  <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center px-6">
+    <!-- LEFT: Image -->
+    <div class="flex justify-center">
+      <!-- Change this src to your actual file; avoid spaces in filenames -->
+      <img src="logo .png">
+    </div>
+
+
+
+
+    <!-- RIGHT: Heading + Text -->
+    <div class="text-left space-y-6">
+      <h3 class="text-3xl font-semibold mb-2">Our Project</h3>
+      <p class="text-2xl font-semibold">The Fantastic Four:</p>
+      <p>
+        The Fantastic Four was born out of a group of friends at Chapel School,
+        an American international school in Brazil. United by curiosity and a shared
+        passion for science, we saw the NASA Space Apps Challenge not just as a
+        competition, but as an opportunity to push our creativity, test our limits,
+        and transform ideas into impact.
+      </p>
+      <p>
+        Our journey isn’t only about building a project. It’s about embracing challenges,
+        discovering unknowns, and learning how to work together, focusing on the strengths
+        of each group member. Our objective is to prove that if 4 students can do it,
+        anyone can reach for the stars.
+      </p>
+      <p>
+        When entering our website, users are presented by the introduction of our project,
+        fully developed and with all necessary specifications. Additionally, the option
+        of getting to know the project is included. Then, when clicking on the project,
+        the user will be directed to the project itself.
+      </p>
+      <p>
+        On the project, users will have 2 initial options to choose from, with easy toggling at the top:
+        <span class="font-semibold">3D Planets</span> and <span class="font-semibold">Deep Zoom</span>.
+        3D Planets lets users rotate a planet and explore; it also includes an AI-style helper for quick facts.
+      </p>
+      <p>
+        Deep Zoom includes: measure, discover, and toggle overlay—so users can deeply zoom into imagery.
+        Layers are selectable, and planet choice is at the top under “Body”.
+      </p>
+      <p>
+        The Fantastic Four believes that planetary knowledge and deep exploration should be available
+        to everyone—hence our focus on the <span class="italic">“Embiggen Your Eyes!”</span> challenge.
+      </p>
+      <div>
+        <button data-goto="explorer" class="btn mt-2">Open the Solar System Explorer →</button>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+
+
+
+<!-- =========================
+   SECTION: EXPLORER
+========================== -->
+<section id="explorer" class="hidden relative">
+<!-- Floating top controls -->
+<div class="glass fixed top-3 left-1/2 -translate-x-1/2 nav-top-fix rounded-2xl px-3 py-2 z-[9999] flex items-center gap-3">
+  <button data-goto="home" class="btn" title="Back to Home">← Home</button>
+  <div class="font-semibold tracking-wide">Space Explorer</div>
+
+
+
+
+  <div class="ml-2 flex gap-2">
+    <button id="tabPlanets" class="btn btn-primary">3D Planets</button>
+    <button id="tabZoom" class="btn">Deep Zoom</button>
+  </div>
+
+
+
+
+  <!-- Planet selector -->
+  <div class="ml-2 flex items-center gap-2">
+    <label class="text-xs opacity-80">Body</label>
+    <select id="bodySelect" class="bg-transparent border border-slate-600 rounded-xl p-1 px-2 text-xs">
+      <option>Mercury</option><option>Venus</option><option>Earth</option><option>Mars</option>
+      <option>Jupiter</option><option selected>Saturn</option><option>Uranus</option><option>Neptune</option>
+    </select>
+  </div>
+
+
+
+
+  <div id="coords" class="text-xs opacity-70 ml-3 hidden">x: –, y: –, z: –</div>
+</div>
+
+
+
+
+<!-- 3D Planets view -->
+<div class="w-full h-screen grid grid-cols-1 md:grid-cols-[1fr_360px]" id="view-planets">
+  <div id="planet-wrap" class="relative">
+    <canvas id="planet-canvas"></canvas>
+    <div id="planet-hud">Drag = orbit • Scroll = zoom • Right-drag = pan</div>
+  </div>
+  <aside id="side-panel" class="hidden md:flex">
+    <div class="p-4 border-b border-slate-700/40">
+      <h1 class="text-lg">🌌 Planet Explorer</h1>
+      <p class="text-xs opacity-75 mt-1">Select a planet at the top. AI sidekick on the right.</p>
+    </div>
+    <div class="flex flex-wrap gap-2 p-3 border-b border-slate-700/40" id="fact-chips"></div>
+    <div class="flex-1 min-h-0 flex flex-col">
+      <div id="chat-log"></div>
+      <div class="flex gap-2 p-3 border-t border-slate-700/40">
+        <input id="chat-q" class="flex-1 rounded-xl bg-[#0b1535] border border-[#223058] px-3 py-2" placeholder="Ask about rings, storms, day length, moons…" />
+        <button id="chat-ask" class="btn">Ask</button>
+        <button id="chat-speak" class="btn" title="Voice reply on/off">🔊</button>
+      </div>
+      <div class="text-[11px] opacity-70 px-4 pb-3">
+        Hint: Choose a planet above • For Earth imagery, use the minimal Deep Zoom tab.
+      </div>
+    </div>
+  </aside>
+</div>
+
+
+
+
+<!-- Deep Zoom view -->
+<div class="w-full h-screen relative overflow-hidden hidden" id="view-zoom">
+  <!-- Left controls -->
+  <div class="glass absolute left-3 top-16 bottom-3 w-64 z-30 rounded-2xl p-3 flex flex-col gap-3">
+    <div class="text-sm font-semibold mb-1">Layers (NASA GIBS)</div>
+    <div class="grid grid-cols-1 gap-2">
+      <button class="btn btn-primary" data-layer="MODIS_Terra_TrueColor">MODIS Terra True Color</button>
+      <button class="btn" data-layer="VIIRS_SNPP_TrueColor">VIIRS SNPP True Color</button>
+      <button class="btn" data-layer="BlueMarble">Blue Marble (Global)</button>
+    </div>
+    <hr class="border-slate-700/50 my-1">
+    <div class="text-sm font-semibold">Tools</div>
+    <div class="grid grid-cols-2 gap-2">
+      <button id="toolMeasure" class="btn btn-primary">Measure</button>
+      <button id="btnDiscover" class="btn">Discover</button>
+    </div>
+    <button id="btnToggleDiscover" class="btn mt-1">Toggle Overlay</button>
+    <div class="text-[11px] opacity-70">Drag to move • Scroll to zoom • Only Measure & Discover enabled.</div>
+  </div>
+
+
+
+
+  <!-- Viewer & overlays -->
+  <div id="viewer"></div>
+  <svg id="measureOverlay"></svg>
+  <canvas id="discoverCanvas"></canvas>
+</div>
+</section>
+
+
+
+
+<footer class="p-6 text-center text-gray-500 text-sm">
+Built for the NASA Space Apps Challenge 2025 🚀 | Team Fantastic Four
+</footer>
